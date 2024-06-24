@@ -1,13 +1,22 @@
-# Dockerfile
-FROM ubuntu:latest
+# Use a base image with warp-cli installed
+FROM ubuntu:20.04
 
-# Install dependencies and warp-cli
-RUN apt-get update && \
-    apt-get install -y curl gnupg && \
-    curl -s https://packages.cloudflarewarp.com/GPG-PUB-KEY-cloudflarewarp | apt-key add - && \
-    echo "deb http://pkg.cloudflare.com/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/cloudflare-main.list && \
-    apt-get update && \
-    apt-get install -y cloudflare-warp iproute2
+# Install required packages
+RUN apt-get update && apt-get install -y \
+    curl \
+    gnupg2 \
+    lsb-release \
+    iproute2
 
-# Command to run warp-cli and print IPv4 address
-CMD ["bash", "-c", "warp-cli register && warp-cli connect && warp-cli --accept-tos status && ip -4 addr show dev eth0 | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'"]
+# Add Cloudflare's GPG key and repository
+RUN curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | apt-key add -
+RUN echo "deb http://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/cloudflare-client.list
+
+# Install warp-cli
+RUN apt-get update && apt-get install -y cloudflare-warp
+
+# Accept TOS
+RUN warp-cli --accept-tos
+
+# Default command
+CMD ["bash"]
